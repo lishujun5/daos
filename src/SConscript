@@ -62,6 +62,7 @@ def scons():
     env.AppendUnique(CPPPATH=[Dir('cart/test/utest').srcnode()])
     Export('env', 'CART_VERSION')
 
+    env.CompilationDatabase()
     SConscript('gurt/SConscript')
     SConscript('cart/SConscript')
     Default('gurt')
