@@ -20,6 +20,7 @@ static uint64_t swim_prot_period_len;
 static uint64_t swim_suspect_timeout;
 static uint64_t swim_ping_timeout;
 
+// 获取周期时间，默认为1s
 static inline uint64_t
 swim_prot_period_len_default(void)
 {
@@ -29,6 +30,7 @@ swim_prot_period_len_default(void)
 	return val;
 }
 
+// 默认超时时间为8个周期，也就是8s
 static inline uint64_t
 swim_suspect_timeout_default(void)
 {
@@ -38,6 +40,7 @@ swim_suspect_timeout_default(void)
 	return val;
 }
 
+// 默认ping超时时间，默认为0.9s
 static inline uint64_t
 swim_ping_timeout_default(void)
 {
@@ -86,6 +89,7 @@ swim_ping_timeout_get(void)
 	return swim_ping_timeout;
 }
 
+// dump swim成员相关状态到某个流
 static inline void
 swim_dump_updates(swim_id_t self_id, swim_id_t from_id, swim_id_t to_id,
 		  struct swim_member_update *upds, size_t nupds)

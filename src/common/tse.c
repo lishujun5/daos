@@ -483,6 +483,7 @@ tse_task_prep_callback(tse_task_t *task)
 		D_FREE(dtc);
 
 		/** Task was re-initialized; */
+		/* 如果任务不是在running或者完成状态，则任务在pre cb中被重新re-init*/
 		if (!dtp->dtp_running && !dtp->dtp_completing)
 			ret = false;
 	}
@@ -555,6 +556,8 @@ tse_sched_process_init(struct tse_sched_private *dsp)
 
 	D_INIT_LIST_HEAD(&list);
 	D_MUTEX_LOCK(&dsp->dsp_lock);
+	/* 将调度组中sleep链表中的任务取出，如果醒来时间已经大于当前时间，
+	那么就将它加入即将调度的初始化链表执行的链表 */
 	d_list_for_each_entry_safe(dtp, tmp, &dsp->dsp_sleeping_list,
 				   dtp_list) {
 		if (dtp->dtp_wakeup_time > now)
@@ -562,6 +565,8 @@ tse_sched_process_init(struct tse_sched_private *dsp)
 		dtp->dtp_wakeup_time = 0;
 		d_list_move_tail(&dtp->dtp_list, &dsp->dsp_init_list);
 	}
+	/* 遍历调度组中的初始化链表，如果任务依赖的0或者调度组已经被终止，
+	那么就将他加入即将遍历的任务链表 */
 	d_list_for_each_entry_safe(dtp, tmp, &dsp->dsp_init_list, dtp_list) {
 		if (dtp->dtp_dep_cnt == 0 || dsp->dsp_cancelling) {
 			d_list_move_tail(&dtp->dtp_list, &list);
@@ -580,9 +585,12 @@ tse_sched_process_init(struct tse_sched_private *dsp)
 		task = tse_priv2task(dtp);
 
 		D_MUTEX_LOCK(&dsp->dsp_lock);
+		/* 如果调度组已经被终止，则调用task complete函数*/
 		if (dsp->dsp_cancelling) {
 			tse_task_complete_locked(dtp, dsp);
 		} else {
+			/* 如果调度组没有被终止，那就是依赖已经为0的任务，那么就将他状态修改为running
+			同时，将他加入到调度组的running链表,将任务的引用+1 */
 			dtp->dtp_running = 1;
 			d_list_move_tail(&dtp->dtp_list,
 					 &dsp->dsp_running_list);
@@ -591,7 +599,7 @@ tse_sched_process_init(struct tse_sched_private *dsp)
 			bumped = true;
 		}
 		D_MUTEX_UNLOCK(&dsp->dsp_lock);
-
+		/* 如果调度组没有终止，那么就调用pre 函数*/
 		if (!dsp->dsp_cancelling) {
 			/** if task is reinitialized in prep cb, skip over it */
 			if (!tse_task_prep_callback(task)) {

@@ -408,6 +408,7 @@ out:
 	return rc;
 }
 
+/* 初始化gdata全局变量 */
 static void
 d_fi_gdata_init(void)
 {
@@ -423,6 +424,7 @@ d_fi_gdata_init(void)
 		D_ERROR("d_hash_table_create_inplace() failed, rc: %d.\n", rc);
 }
 
+/* 释放gdata全局变量 */
 static void
 d_fi_gdata_destroy(void)
 {
@@ -646,12 +648,14 @@ d_should_fail(struct d_fault_attr_t *fault_attr)
 	    fault_attr->fa_max_faults <= fault_attr->fa_num_faults)
 		D_GOTO(out, rc = false);
 
+	// 间隔多少次，触发一次
 	if (fault_attr->fa_interval > 1) {
 		fault_attr->fa_num_hits++;
 		if (fault_attr->fa_num_hits % fault_attr->fa_interval)
 			D_GOTO(out, rc = false);
 	}
 
+	// 根据概率判断是否注入错误
 	if (fault_attr->fa_probability_y != 0 &&
 	    fault_attr->fa_probability_x <=
 	    nrand48(fault_attr->fa_rand_state) % fault_attr->fa_probability_y)
